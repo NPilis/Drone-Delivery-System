@@ -1,0 +1,48 @@
+Time: 1 min  (Drone: 1 | Packages: 4) - In base
+Time: 1 min  (Drone: 2 | Packages: 4) - In base
+Time: 1 min  (Drone: 3 | Packages: 4) - In base
+Time: 1 min  (Drone: 4 | Packages: 4) - In base
+Time: 1 min  (Drone: 5 | Packages: 4) - In base
+Time: 1 min  (Drone: 6 | Packages: 4) - In base
+Time: 1 min  (Drone: 7 | Packages: 4) - In base
+Time: 1 min  (Drone: 8 | Packages: 4) - In base
+Time: 12 min  (Drone: 4 | Packages: 3) - Package delivered to client with id 6
+Time: 13 min  (Drone: 8 | Packages: 3) - Package delivered to client with id 19
+Time: 18 min  (Drone: 8 | Packages: 2) - Package delivered to client with id 24
+Time: 19 min  (Drone: 5 | Packages: 3) - Package delivered to client with id 16
+Time: 20 min  (Drone: 3 | Packages: 3) - Package delivered to client with id 20
+Time: 25 min  (Drone: 6 | Packages: 3) - Package delivered to client with id 8
+Time: 26 min  (Drone: 5 | Packages: 2) - Package delivered to client with id 18
+Time: 26 min  (Drone: 7 | Packages: 3) - Package delivered to client with id 22
+Time: 30 min  (Drone: 4 | Packages: 2) - Package delivered to client with id 30
+Time: 31 min  (Drone: 3 | Packages: 2) - Package delivered to client with id 21
+Time: 31 min  (Drone: 8 | Packages: 1) - Package delivered to client with id 17
+Time: 34 min  (Drone: 1 | Packages: 3) - Package delivered to client with id 27
+Time: 34 min  (Drone: 2 | Packages: 3) - Package delivered to client with id 23
+Time: 35 min  (Drone: 6 | Packages: 2) - Package delivered to client with id 25
+Time: 38 min  (Drone: 2 | Packages: 2) - Package delivered to client with id 9
+Time: 38 min  (Drone: 4 | Packages: 1) - Package delivered to client with id 5
+Time: 38 min  (Drone: 8 | Packages: 0) - Package delivered to client with id 32
+Time: 42 min  (Drone: 7 | Packages: 2) - Package delivered to client with id 11
+Time: 43 min  (Drone: 3 | Packages: 1) - Package delivered to client with id 13
+Time: 44 min  (Drone: 4 | Packages: 0) - Package delivered to client with id 31
+Time: 45 min  (Drone: 1 | Packages: 2) - Package delivered to client with id 15
+Time: 46 min  (Drone: 5 | Packages: 1) - Package delivered to client with id 26
+Time: 48 min  (Drone: 2 | Packages: 1) - Package delivered to client with id 12
+Time: 49 min  (Drone: 7 | Packages: 1) - Package delivered to client with id 14
+Time: 50 min  (Drone: 1 | Packages: 1) - Package delivered to client with id 7
+Time: 52 min  (Drone: 6 | Packages: 1) - Package delivered to client with id 4
+Time: 53 min  (Drone: 1 | Packages: 0) - Package delivered to client with id 10
+Time: 56 min  (Drone: 8 | Packages: 4) - In base
+Time: 58 min  (Drone: 2 | Packages: 0) - Package delivered to client with id 3
+Time: 61 min  (Drone: 7 | Packages: 0) - Package delivered to client with id 2
+Time: 63 min  (Drone: 4 | Packages: 4) - In base
+Time: 66 min  (Drone: 3 | Packages: 0) - Package delivered to client with id 29
+Time: 67 min  (Drone: 5 | Packages: 0) - Package delivered to client with id 1
+Time: 76 min  (Drone: 6 | Packages: 0) - Package delivered to client with id 28
+Time: 88 min  (Drone: 3 | Packages: 4) - In base
+Time: 90 min  (Drone: 1 | Packages: 4) - In base
+Time: 93 min  (Drone: 7 | Packages: 4) - In base
+Time: 94 min  (Drone: 2 | Packages: 4) - In base
+Time: 95 min  (Drone: 5 | Packages: 4) - In base
+Time: 111 min  (Drone: 6 | Packages: 4) - In base

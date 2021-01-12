@@ -3,14 +3,14 @@ from client import Client
 from drone import Drone
 import numpy as np
 import random
-INF = 999999
+MAX_COST = 999999
 
 class TabuSearch:
     
     def __init__(self, num_of_drones=3, drone_capacity=4,
                  num_of_clients=12, clients_file=None):
         self.BASE = Client(0, 0, 0)
-        self.M = num_of_drones # Actual number of drones
+        self.M = num_of_drones
         self.Q = drone_capacity
         self.N = num_of_clients
         
@@ -24,7 +24,7 @@ class TabuSearch:
         self.best_candidate = None
         self.candidate_cost = 0
         self.best_cost = 0
-        self._best = {}
+        self.processed_solution = {}
         self.costs = []
         self.best_costs = []
         
@@ -57,8 +57,8 @@ class TabuSearch:
             for i in range(num_of_clients):
                 x_pos, y_pos = 0, 0
                 while y_pos == 0 and x_pos == 0 and (x_pos, y_pos) not in busy:
-                    x_pos = random.randint(-25,25)
-                    y_pos = random.randint(-25,25)
+                    x_pos = random.randint(-35, 35)
+                    y_pos = random.randint(-35, 35)
                 busy.add((x_pos, y_pos))
                 file.write(f'{i+1},{x_pos},{y_pos}\n')
                 clients.append(Client(i+1, x_pos, y_pos))
@@ -128,13 +128,10 @@ class TabuSearch:
         return sum(self.distance_matrix[route[i]][route[i+1]] for i in range(len(route)-1))
     
     def sort_route(self, route):
-        """
-        TESTING
-        Sorts route by searching permutations and finding
+        """Sorts route by searching permutations and finding
         the most optimal (with least cost)
         # NOTE: it may be unefficient when route consist
-                of more than 6 clients
-        """
+                of more than 6 clients"""
         r = route
         best_fitness = self.route_fitness(r)
         for perm in list(itertools.permutations(r[1:-1])):
@@ -148,73 +145,66 @@ class TabuSearch:
         return r
     
     def sort_solution(self, solution):
-        """
-        TESTING
-        Sorts solution by sorting each route
-        """
+        """Sorts solution by sorting each route"""
         return [self.sort_route(r) for r in solution]
     
     def find_closest_client(self, client):
-        """
-        TESTING
-        Finds closest neighbor to passed client
-        """
-        min_ = INF
+        """Finds closest neighbor to passed client"""
+        min_ = MAX_COST
         for c in self.clients:
             if c != self.BASE and c != client:
                 dist_ = self.distance_matrix[client.id][c.id]
                 if dist_ < min_:
-                    client_ID = c.id
                     client = c
                     min_ = dist_
         return client
 
     def find_neighborhood(self):
-        sol = [s[:] for s in self.best_candidate]
-        nb = []
-        for i in range(self.D):
-            for j in range(i, self.D):
-                s_copy = [s[:] for s in sol]
-                f_samp = np.random.randint(1,len(sol[i])-1)
-                s_samp = np.random.randint(1,len(sol[j])-1)
-                s_copy[i][f_samp], s_copy[j][s_samp] = s_copy[j][s_samp], s_copy[i][f_samp]
-                nb.append(s_copy)
-        return nb
+        """Generate each neighbor by randomly swapping
+        only one client between every two paths from best candidate"""
+        solution = [path[:] for path in self.best_candidate]
+        neighborhood = []
+        for id_1 in range(self.D):
+            for id_2 in range(id_1, self.D):
+                s_copy = [path[:] for path in solution]
+                samp_1 = np.random.randint(1,len(solution[id_1])-1)
+                samp_2 = np.random.randint(1,len(solution[id_2])-1)
+                s_copy[id_1][samp_1], s_copy[id_2][samp_2] = s_copy[id_2][samp_2], s_copy[id_1][samp_1]
+                neighborhood.append(s_copy)
+        return neighborhood
     
     def find_neighborhood2(self):
-        """
-        Generuje podaną ilość zmian pomiędzy ścieżkami  (jak dobrać ilość zmian ?)
-        pierwsza scieżka zamienia randomowo sie z drugą jednym klientem druga z trzecia itd.
-        ostatnia zamienia się z pierwszą na początku
-        Każde nowe rozwiązanie jest zapisywane osobno i zwracane
-        """
-        num_of_swaps = 4
-        sol = [s for s in self.best_candidate]
-        nb = []
-        for j in range(num_of_swaps):
-            for i in range(len(sol)):
-                s_copy = [s[:] for s in sol]
-                f_samp = s_samp = 0
-                while f_samp == s_samp:
-                    f_samp = np.random.randint(1,len(sol[i-1])-1)
-                    s_samp = np.random.randint(1,len(sol[i])-1)
-                s_copy[i-1][f_samp], s_copy[i][s_samp] = s_copy[i][s_samp], s_copy[i-1][f_samp]
-                nb.append(s_copy)
-        return nb
+        """Generates number of changes between paths
+        First path swaps one client with second path,
+        second with third and so on.. last paths swaps
+        with first"""
+        num_of_swaps = 3
+        solution = [path[:] for path in self.best_candidate]
+        neighborhood = []
+        for _ in range(num_of_swaps):
+            for idx in self.D:
+                s_copy = [path[:] for path in solution]
+                samp_1 = samp_2 = 0
+                while samp_1 == samp_2:
+                    samp_1 = np.random.randint(1,len(solution[idx-1])-1)
+                    samp_2 = np.random.randint(1,len(solution[idx])-1)
+                s_copy[idx-1][samp_1], s_copy[idx][samp_2] = s_copy[idx][samp_2], s_copy[idx-1][samp_1]
+                neighborhood.append(s_copy)
+        return neighborhood
     
     def process_solution(self):
-        for i, p in enumerate(self.best_solution):
-            path = []
-            for x in p:
-                if x == 0:
-                    path.append(self.BASE)
+        """Process solution which can be later visualized"""
+        for idx, path in enumerate(self.best_solution):
+            temp_path = []
+            for client_id in path:
+                if client_id == 0:
+                    temp_path.append(self.BASE)
                 else:
-                    path.append(self.clients[x-1])
-            self._best[self.drones[i]] = path
+                    temp_path.append(self.clients[client_id-1])
+            self.processed_solution[self.drones[idx]] = temp_path
     
-    
-    ### TESTING
     def initialize_solution(self, solution):
+        """Initialize random solution"""
         self.best_candidate = solution
         self.best_solution = solution
         self.tabu_list.append(solution)
@@ -222,32 +212,19 @@ class TabuSearch:
         self.candidate_cost = self.best_cost
         self.costs.append(self.best_cost)
         self.best_costs.append(self.best_cost)
-    
-    ### TESTING
-    def __reset(self):
-        self.tabu_list = []
-        self.best_solution = None
-        self.best_candidate = None
-        self.candidate_cost = 0
-        self.best_cost = 0
-        self._best = {}
-        self.costs = []
-        self.best_costs = []
-    
+        self.processed_solution = {}
     
     @with_timer
     def search(self, tabu_size=50, n_iters=1000):
-        """
-        Główna pętla
-        1. Tworzymy randomowe rozwiązanie i zapisujemy w zmiennych
-        2. Iterujemy po zwróconych sąsiadach i szukamy najlepszego kandydata
-        3. Jeżeli funkcja kosztu tego kandydata jest mniejsza od najlepszego znalezionego
-           to zapisujemy go
-        4. Dodajemy kandydata do listy tabu
-        5. Jeśli lista jest wieksza niż maksymalny rozmiar to odrzuć to dodane najwcześniej (jak dobrać?)2
-        """
-        
-        ### TESTING
+        """Main search loop
+        1. Create and initialize random solution
+        2. Iterate over neighbors and search for best candidate,
+           save it if not in tabu list
+        3. If best candidate's cost function is less than best known
+           solution then save it
+        4. Add candidate to tabu list
+        5. If tabu list length is > max tabu size then remove
+           the first one in the list"""
         sol = self.generate_random_solution()
         self.initialize_solution(sol)  
         

@@ -10,15 +10,13 @@ class WithVisualization:
     def __init__(self, obj):
         self.drones = obj.drones
         self.clients = obj.clients
-        self.solution = obj._best if obj._best else obj.generate_first_solution()
-        print(self.solution)
+        self.solution = obj.processed_solution if obj.processed_solution else obj.generate_first_solution()
         self.total_time = 0
         self.threshold = 2000
         
         self.x_clients, self.y_clients = self._initialize_client_positions(obj.clients)
         self.x_visited, self.y_visited = [], []
         self.x_drones, self.y_drones = [], []
-        self.path_colors = ['#ffe000', '#00ffb9', '#070208', '#9b00ff', '#22222']
     
     @staticmethod
     def _initialize_client_positions(clients):
@@ -57,12 +55,11 @@ class WithVisualization:
     
     def plot_figure(self, sizes=(12,12)):
         fig = plt.figure(figsize=sizes)
-    
+
     def visualize_solution(self):
         """Run real time visualization"""
-        fig, ax = plt.subplots(figsize=(12, 12))
-        k = 1
-        time_elapsed = 0
+        fig, ax = plt.subplots(figsize=(15, 15))
+        k, elapsed_time, D = 1, 0, len(self.drones)
         delivered = False
         while not delivered:
             delivered = True
@@ -70,45 +67,41 @@ class WithVisualization:
             for drone in self.drones:
                 if drone.temp_client_id == None:
                     is_assigned = self.assign_client(drone.id)
-                    if is_assigned or (drone.x != 0 or drone.y != 0):
+                    if is_assigned or drone.x != 0 or drone.y != 0:
                         delivered = False
                     self.update_visited_clients(drone.x_prev_client, drone.y_prev_client)
                 else:
-                    drone.travel()
+                    drone.travel(elapsed_time)
                     delivered = False
-            time_elapsed += 1
+            elapsed_time += 1
             self.update_drone_positions()
-            ax.plot(self.x_clients, self.y_clients, 'go', markersize=12, label="Odbiorca")
-            ax.plot(self.x_drones[-len(self.drones):], self.y_drones[-len(self.drones):], 'm{}'.format(k), markersize=20, label="Dron")
-            for j in range(len(self.drones)):
-                ax.plot(self.x_drones[j::len(self.drones)], self.y_drones[j::len(self.drones)])
-            ax.plot(self.x_visited, self.y_visited, 'ro', markersize=12, linewidth=4, label="Dostarczona paczka")
-            ax.plot(0, 0, 'bo-', markersize=14)
-            ax.grid()
-            ax.set_ylim(-30, 30)
-            ax.set_xlim(-30, 30)
-            ax.set_title(f'Akutalny czas dostarczania paczek w minutach: {time_elapsed}')
+            ax.plot(0, 0, 'bo', markersize=14, label="Base")
+            ax.plot(self.x_clients, self.y_clients, 'go', markersize=12, label="Receiver")
+            ax.plot(self.x_drones[-D:], self.y_drones[-D:], 'm{}'.format(k), markersize=24, markeredgewidth=3, label="Drone")
+            ax.plot(self.x_visited, self.y_visited, 'ro', markersize=12, label="Package delivered")
+            for s in range(D):
+                ax.plot(self.x_drones[s::D], self.y_drones[s::D], linewidth=3, label=f"(Drone: {s+1}, Packages: {self.drones[s].num_of_packages})")
+            ax.set_title(f'Actual time since start in minutes: {elapsed_time}')
+            ax.set_ylim(-40, 40)
+            ax.set_xlim(-40, 40)
             ax.legend()
-            fig.canvas.draw() 
-            renderer = fig.canvas.renderer 
+            ax.grid()
+            fig.canvas.draw()
+            renderer = fig.canvas.renderer
             ax.draw(renderer) 
-            plt.pause(0.001)
+            plt.pause(0.01)
             ax.cla()
+        ax.plot(0, 0, 'bo', markersize=14, label="Base")
+        ax.plot(self.x_clients, self.y_clients, 'go', markersize=12, label="Receiver")
         self.update_drone_positions()
-        ax.plot(self.x_clients, self.y_clients, 'go', markersize=12, label="Odbiorca")
-        ax.plot(self.x_drones[-len(self.drones):], self.y_drones[-len(self.drones):], 'm{}'.format(k), markersize=20, label="Dron")
-        for j in range(len(self.drones)):
-            ax.plot(self.x_drones[j::len(self.drones)], self.y_drones[j::len(self.drones)])
-        ax.plot(self.x_visited, self.y_visited, 'ro', markersize=12, linewidth=4, label="Dostarczona paczka")
-        ax.plot(0, 0, 'bo-', markersize=14)
-        ax.grid()
-        ax.set_ylim(-30, 30)
-        ax.set_xlim(-30, 30)
-        ax.set_title(f'Akutalny czas dostarczania paczek w minutach: {time_elapsed}')
+        for s in range(D):
+            ax.plot(self.x_drones[s::D], self.y_drones[s::D], linewidth=3, label=f"(Drone: {s+1}, Packages: {self.drones[s].num_of_packages})")
+        ax.set_title(f'Actual time since start in minutes: {elapsed_time}')
+        ax.set_ylim(-40, 40)
+        ax.set_xlim(-40, 40)
         ax.legend()
+        ax.grid()
         plt.show()
-        return ax
-            
     
     def plot_solution(self):
         """Plot final solution"""
@@ -116,10 +109,10 @@ class WithVisualization:
             if d in self.solution:
                 x_s, y_s = zip(*[(point.x, point.y) for point in self.solution[d]]) 
                 plt.plot(x_s, y_s, label=f'{d}')
-        plt.plot(self.x_clients, self.y_clients, 'ro', markersize=12, label="Odbiorca")
-        plt.plot(0, 0, 'bo', markersize=12, label="Baza")
+        plt.plot(self.x_clients, self.y_clients, 'ro', markersize=12, label="Receiver")
+        plt.plot(0, 0, 'bo', markersize=12, label="Base")
         plt.grid()
         plt.legend()
-        plt.ylim(-30, 30)
-        plt.xlim(-30, 30)
+        plt.ylim(-40, 40)
+        plt.xlim(-40, 40)
         plt.show()
