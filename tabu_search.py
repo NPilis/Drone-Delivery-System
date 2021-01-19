@@ -18,8 +18,7 @@ class TabuSearch:
         self.drones, self.D = self._create_drones(num_of_clients, drone_capacity)
         self.clients = self._initialize_clients(clients_file, num_of_clients)
         self.distance_matrix = self._create_distance_matrix()
-        
-        self.tabu_list = []
+        self.TABU = {}
         self.best_solution = None
         self.best_candidate = None
         self.candidate_cost = 0
@@ -164,14 +163,16 @@ class TabuSearch:
         only one client between every two paths from best candidate"""
         solution = [path[:] for path in self.best_candidate]
         neighborhood = []
+        moves = []
         for id_1 in range(self.D):
             for id_2 in range(id_1, self.D):
                 s_copy = [path[:] for path in solution]
                 samp_1 = np.random.randint(1,len(solution[id_1])-1)
                 samp_2 = np.random.randint(1,len(solution[id_2])-1)
                 s_copy[id_1][samp_1], s_copy[id_2][samp_2] = s_copy[id_2][samp_2], s_copy[id_1][samp_1]
+                moves.append((id_1, samp_1, id_2, samp_2))
                 neighborhood.append(s_copy)
-        return neighborhood
+        return neighborhood, moves
     
     def find_neighborhood2(self):
         """Generates number of changes between paths
@@ -181,6 +182,7 @@ class TabuSearch:
         num_of_swaps = 3
         solution = [path[:] for path in self.best_candidate]
         neighborhood = []
+        moves = []
         for _ in range(num_of_swaps):
             for idx in self.D:
                 s_copy = [path[:] for path in solution]
@@ -189,9 +191,10 @@ class TabuSearch:
                     samp_1 = np.random.randint(1,len(solution[idx-1])-1)
                     samp_2 = np.random.randint(1,len(solution[idx])-1)
                 s_copy[idx-1][samp_1], s_copy[idx][samp_2] = s_copy[idx][samp_2], s_copy[idx-1][samp_1]
+                moves.append((id_1, samp_1, id_2, samp_2))
                 neighborhood.append(s_copy)
-        return neighborhood
-    
+        return neighborhood, moves
+
     def process_solution(self):
         """Process solution which can be later visualized"""
         for idx, path in enumerate(self.best_solution):
@@ -207,7 +210,6 @@ class TabuSearch:
         """Initialize random solution"""
         self.best_candidate = solution
         self.best_solution = solution
-        self.tabu_list.append(solution)
         self.best_cost = self._fitness(solution)
         self.candidate_cost = self.best_cost
         self.costs.append(self.best_cost)
@@ -219,41 +221,59 @@ class TabuSearch:
         """Main search loop
         1. Create and initialize random solution
         2. Iterate over neighbors and search for best candidate,
-           save it if not in tabu list
-        3. If best candidate's cost function is less than best known
+           save it if move not in tabu list
+        3. If move in tabu list check aspiration criteria
+        4. If best candidate's cost function is less than best known
            solution then save it
-        4. Add candidate to tabu list
-        5. If tabu list length is > max tabu size then remove
+        5. Add candidate's move to tabu list
+        6. If tabu list length is > max tabu size then remove
            the first one in the list"""
         sol = self.generate_random_solution()
         self.initialize_solution(sol)  
+        temp_move = None
         
         while n_iters > 0:
-            nh = self.find_neighborhood()
-            for nb in nh:
-                if nb not in self.tabu_list:
+            nh, moves = self.find_neighborhood()
+            for nb, move in zip(nh, moves):
+                if move not in self.TABU:
                     self.best_candidate = nb
                     self.candidate_cost = self._fitness(self.best_candidate)
+                    temp_move = move
                     break
             
-            for nb in nh[1:]:
+            for nb, move  in zip(nh[1:], moves[1:]):
                 nb_cost = self._fitness(nb)
                 if nb_cost < self.candidate_cost:
-                    if nb not in self.tabu_list:
+                    if move not in self.TABU:
                         self.best_candidate = nb
                         self.candidate_cost = nb_cost
+                        temp_move = move
+                    else:
+                        # Aspiration criteria
+                        if nb_cost < self.best_cost:
+                            self.best_candidate = nb
+                            self.candidate_cost = nb_cost
+                            temp_move = move
             
             if self.candidate_cost < self.best_cost:
                 self.best_solution = self.best_candidate
                 self.best_cost = self.candidate_cost
             
             # Add candidate to tabu and update cost history
-            self.tabu_list.append(self.best_candidate)
+            self.TABU[temp_move] = tabu_size
             self.costs.append(self.candidate_cost)
             self.best_costs.append(self.best_cost)
             
-            if len(self.tabu_list) > tabu_size:
-                self.tabu_list.pop(0)
+            # Remove moves from tabu list
+            moves_to_delete = []
+            for move, i in self.TABU.items():
+                if i == 0:
+                    moves_to_delete.append(move)
+                else:
+                    self.TABU[move] -= 1
+                    
+            for s in moves_to_delete:
+                del self.TABU[s]
             
             n_iters -= 1
     
